@@ -155,6 +155,24 @@ static int otp_nb_read_parallel(u32 *data)
 	return 0;
 }
 
+static u32 override_vdd(u32 speed, u32 vdd)
+{
+	u32 r;
+
+	// Add some margin.
+	r = vdd + 3;
+
+	// Guard.
+	if (r > 48)		// 1.307 V
+		r = 48;
+
+	if (r != vdd) {
+		printf("Overriding VDD with %d (was %d)\n", r, vdd);
+	}
+
+	return r;
+}
+
 /***************************************************************************************************
   * init_avs
   * Read AVS settings in OTP, then write the correct value into CPU registers
@@ -206,6 +224,7 @@ int init_avs(u32 speed)
 				avis_dump[vdd_default].desc);
 		} else {
 			vdd_otp += AVS_VDD_BASE;
+			vdd_otp = override_vdd(speed, vdd_otp);
 			regval |= (vdd_otp << HIGH_VDD_LIMIT_OFF);
 			regval |= (vdd_otp << LOW_VDD_LIMIT_OFF);
 			printf("SVC REV: %d, CPU VDD voltage: %s\n",
